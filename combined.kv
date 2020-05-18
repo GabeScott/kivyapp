@@ -1,0 +1,115 @@
+WindowManager:
+	MainWindow:
+		id:screen1
+		name: 'screen1'
+	SecondWindow:
+		id:screen2
+		name:'screen2'
+
+
+<BackgroundColor@Widget>
+    background_color: 1, 1, 1, 1
+    canvas.before:
+        Color:
+            rgba: root.background_color
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
+<BackgroundLabel@Label+BackgroundColor>
+    background_color: 0, 0, 0, 0
+    outline_color: 0,0,0,1
+
+
+
+
+
+<MainWindow>:
+	mygrid:mygrid
+
+	MyGrid:
+		id: mygrid
+		numplayers:numplayers
+		curplayer:curplayer
+		playername:playername
+		displaynumplayers:displaynumplayers
+		displayplayernames:displayplayernames
+
+		FloatLayout:
+			size: root.width, root.height
+			size_hint: .6,.3
+
+			GridLayout:
+				size_hint: .65,.05
+				cols:3
+				pos_hint: {"x":.175, "y":.6}
+				BackgroundLabel:
+					size_hint: .3, 1
+					text: "How Many Players?"
+					background_color: .4,.4,.4,1
+				TextInput:		
+					size_hint: .3, 1	
+					id: numplayers		
+					multiline: False
+				Button:
+					size_hint: .1, 1
+					text: "Enter"
+					on_press: mygrid.set_num_players()
+					on_release:
+			GridLayout:
+				size_hint: .65,.05
+				cols:3
+				pos_hint: {"x":.175, "y":.53}
+				BackgroundLabel:
+					id: curplayer
+					text: "Player"
+					text_size: self.width, None
+					halign: "center"
+					size_hint: .3, 1
+					height: self.texture_size[1]
+					background_color: .4,.4,.4,1
+				TextInput:			
+					size_hint: .3, 1	
+					id: playername
+					multiline: False
+				Button:
+					size_hint: .1, 1
+					text: "Add"
+					on_press: mygrid.submit_player_name()		
+
+			GridLayout:
+				size_hint: .2,.1
+				cols:1
+				pos_hint:{"x": .4, "y":.1}
+				Button:
+					text:"Play!"
+					on_release:
+                        app.root.current = "screen2"
+                        root.manager.transition.direction = "left"			
+
+			GridLayout:
+				size_hint: 1,1
+				cols:2
+				pos_hint:{"x": 0, "y":0}
+				BackgroundLabel:
+					text_size: self.width, None
+					pos_hint: {"x":1, "y":0}
+					text: "Number of Players: "
+					id: displaynumplayers
+					halign: "left"
+					size_hint: .5, None
+				BackgroundLabel:
+					pos_hint: {"x":0, "y":0}
+					text_size: self.width, None
+					text: "Players: "
+					id: displayplayernames
+					halign: "left"
+					size_hint: .5, None
+
+
+<SecondWindow>:
+	myscoregrid:myscoregrid
+	MyScoreGrid:
+		name: 'myscoregrid'
+		id: myscoregrid
+		size_hint: 1, 1

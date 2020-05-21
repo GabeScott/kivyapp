@@ -15,6 +15,7 @@ from kivy.animation import Animation
 from kivy.properties import StringProperty, NumericProperty
 from kivy.core.window import Window
 from kivy.uix.popup import Popup
+from kivy.clock import Clock
 import math
 
 
@@ -33,18 +34,24 @@ class IncrediblyCrudeClock(Label):
     def start(self):
         Animation.cancel_all(self)  # stop any current animations
         self.anim = Animation(a=0, duration=self.a)
+        
         def finish_callback(animation, incr_crude_clock):
-            incr_crude_clock.text = "0"
             popup = Popup(title='Test popup', content=Label(text='No more time left, please contact an associate to add more time', 
             	halign = "center",text_size= (200, None), size_hint=(1,1)),
               size_hint=(.4,.4))
             popup.open()
+            if self.parent.name == 'mygrid':
+            	self.parent.playbutton.disabled=True
+
         self.anim.bind(on_complete=finish_callback)
         self.anim.start(self)
 
 
+
     def add_time(self, time):
      	self.a += time
+     	if self.parent.name == 'mygrid':
+           	self.parent.playbutton.disabled=False
 
 
     def pause(self):
@@ -139,6 +146,7 @@ class MyScoreGrid(FloatLayout):
 		self._keyboard.bind(on_key_down=self._on_keyboard_down)
 		self.loaded = True
 
+		self.inside.name='insideGridLayout'
 		self.inside.add_widget(self.kivy_timer)
 
 
@@ -173,10 +181,17 @@ class MyScoreGrid(FloatLayout):
 		elif keycode[1] == '5':
 			points_to_add = 5
 
-		self.all_labels[self.cur_player][self.cur_round].text=str(points_to_add)
-		self.player_points[self.cur_player-1] += points_to_add
-		self.update_total_points()
-		self.update_label_index()
+
+		if self.cur_round > self.rounds:
+			if isinstance(App.get_running_app().root_window.children[0], Popup):
+				App.get_running_app().root_window.children[0].dismiss()
+			popup = Popup(title='Game Over', content=Label(text="No More Rounds, Please Start New Game"), size_hint=(.4,.3))
+			popup.open()
+		else:
+			self.all_labels[self.cur_player][self.cur_round].text=str(points_to_add)
+			self.player_points[self.cur_player-1] += points_to_add
+			self.update_total_points()
+			self.update_label_index()
 		print(keycode[1])
 		return True
 
@@ -188,14 +203,15 @@ class MyScoreGrid(FloatLayout):
 			self.cur_player = 1
 			self.cur_round += 1
 
-		if self.cur_round > self.rounds:
-			self.cur_round = 1
-
 	def update_points(self, instance):
-		self.all_labels[self.cur_player][self.cur_round].text=instance.text
-		self.player_points[self.cur_player-1] += int(instance.text)
-		self.update_total_points()
-		self.update_label_index()
+		if self.cur_round > self.rounds:
+			popup = Popup(title='Game Over', content=Label(text="No More Rounds, Please Start New Game"), size_hint=(.4,.3))
+			popup.open()
+		else:
+			self.all_labels[self.cur_player][self.cur_round].text=instance.text
+			self.player_points[self.cur_player-1] += int(instance.text)
+			self.update_total_points()
+			self.update_label_index()
 
 
 
@@ -210,8 +226,6 @@ class MyScoreGrid(FloatLayout):
 		# self._keyboard_closed()
 		
 
-
-
 class MyGrid(Widget):
 	player_names = []
 	curplayer_index = 1
@@ -222,10 +236,13 @@ class MyGrid(Widget):
 	displaynumplayers = ObjectProperty(None)
 	displayplayernames = ObjectProperty(None)
 	totalpointslabel = ObjectProperty(None)
+	playbutton=ObjectProperty(None)
+
 	kivy_timer = IncrediblyCrudeClock()
 
 	def __init__(self, **kwargs):
 		super(MyGrid, self).__init__(**kwargs)
+		self.kivy_timer.name="kivy_timer"
 		self.kivy_timer.set_time(20)
 		self.kivy_timer.start()
 
@@ -246,17 +263,26 @@ class MyGrid(Widget):
 		pass
 
 
+	def focus_playername(self, instance):
+		self.playername.focus=True
+
+
 
 	def _on_keyboard_down_main(self, keyboard, keycode, text, modifiers):
 		print(keycode)
 		print(text)
 		print(modifiers)
+
+		if keycode[1] == 'enter':
+			Clock.schedule_once(self.focus_playername, .2)
+
 		if keycode[1] == 'm' and "ctrl" in modifiers:
 			popupGrid = GridLayout()
 			popupGrid.cols=2
 
 			pin_input = TextInput(multiline=False, size_hint=(.5,.4))
 			time_input = TextInput(multiline=False, size_hint=(.5,.4))
+			pin_input.password=True
 
 			popupGrid.add_widget(Label(text="Enter PIN",size_hint=(.5,.4)))
 			popupGrid.add_widget(pin_input)
@@ -273,6 +299,12 @@ class MyGrid(Widget):
 			self.kivy_timer.pause()
 			self.kivy_timer.add_time(float(time)*60)
 			self.kivy_timer.start()
+			popup = Popup(title='Time Added', content=Label(text=time + " Minute(s) Added Successfully"), size_hint=(.4,.3))
+			popup.open()
+		else:
+			popup = Popup(title='Incorrect PIN', content=Label(text="Incorrect PIN entered"), size_hint=(.4,.3))
+			popup.open()
+
 		
 
 	def set_timer(self, time_left):
@@ -311,10 +343,19 @@ class MyGrid(Widget):
 		return self.kivy_timer.a
 
 
+	def check_timer_status(self):
+		if self.kivy_timer.a == 0:
+			self.playbutton.on_release=print("released")
+
+
 
 	def submit_player_name(self):
+		if not self.numplayers.text.isdigit():
+			print("Invalid number of players")
+			popup = Popup(title='Enter Number of Players', content=Label(text="Please Enter a Valid Number of Players"), size_hint=(.4,.3))
+			popup.open()
 
-		if self.curplayer_index < int(self.numplayers.text):
+		elif self.curplayer_index < int(self.numplayers.text):
 			self.curplayer_index += 1
 			self.curplayer.text = "Enter Name for Player " + str(self.curplayer_index)
 			self.player_names.append(self.playername.text)
@@ -336,6 +377,11 @@ class MyGrid(Widget):
 
 		self.playername.text = ""		
 
+		self.playername.focus=True
+
+	def ok_to_play(self):
+		return len(self.player_names) > 0
+
 		
 
 
@@ -350,6 +396,8 @@ class MainWindow(Screen):
 			self.manager.ids.screen1.ids.mygrid.set_timer(self.manager.ids.screen2.ids.myscoregrid.get_time_left())
 			self.manager.ids.screen1.ids.mygrid.restart_timer()
 			self.manager.ids.screen2.ids.myscoregrid.pause_timer()
+			if self.manager.ids.screen1.ids.mygrid.kivy_timer.a == 0:
+				self.manager.ids.screen1.ids.mygrid.playbutton.disabled = True
 	
 
 class SecondWindow(Screen):
@@ -361,7 +409,15 @@ class SecondWindow(Screen):
 		self.manager.ids.screen1.ids.mygrid.pause_timer()
 
 class WindowManager(ScreenManager):
-	pass
+	def go_to_game_screen(self):
+		if self.ids.screen1.ids.mygrid.ok_to_play():
+			self.current='screen2'
+			self.transition.direction = "left"
+		else:
+			popup = Popup(title='Enter Player Names', content=Label(text="Please Enter Players to Proceed"), size_hint=(.4,.3))
+			popup.open()
+
+	
 
 
 kv = Builder.load_file("combined.kv")

@@ -30,6 +30,7 @@ WindowManager:
 	mygrid:mygrid
 
 	MyGrid:
+		name:"mygrid"
 		id: mygrid
 		timer:"timer"
 		numplayers:numplayers
@@ -38,6 +39,7 @@ WindowManager:
 		displaynumplayers:displaynumplayers
 		displayplayernames:displayplayernames
 		totalpointslabel:totalpointslabel
+		playbutton:playbutton
 
 		FloatLayout:
 			size: root.width, root.height
@@ -65,6 +67,8 @@ WindowManager:
 					size_hint: .3, 1	
 					id: numplayers		
 					multiline: False
+					write_tab: False
+					on_text_validate: mygrid.set_num_players()
 				Button:
 					size_hint: .1, 1
 					text: "Enter"
@@ -86,6 +90,8 @@ WindowManager:
 					size_hint: .3, 1	
 					id: playername
 					multiline: False
+					write_tab: False
+					on_text_validate: mygrid.submit_player_name()
 				Button:
 					size_hint: .1, 1
 					text: "Add"
@@ -96,10 +102,11 @@ WindowManager:
 				cols:1
 				pos_hint:{"x": .4, "y":.1}
 				Button:
+					id:playbutton
 					text:"Play!"
+					on_press: mygrid.check_timer_status()
 					on_release:
-                        app.root.current = "screen2"
-                        root.manager.transition.direction = "left"			
+						app.root.go_to_game_screen()		
 
 			GridLayout:
 				size_hint: 1,1
@@ -110,7 +117,7 @@ WindowManager:
 					pos_hint: {"x":1, "y":0}
 					text: "Number of Players: "
 					id: displaynumplayers
-					halign: "left"
+					halign: "center"
 					size_hint: .5, None
 				BackgroundLabel:
 					pos_hint: {"x":0, "y":0}

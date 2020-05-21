@@ -7,6 +7,8 @@ WindowManager:
 		name:'screen2'
 
 
+
+
 <BackgroundColor@Widget>
     background_color: 1, 1, 1, 1
     canvas.before:
@@ -29,15 +31,27 @@ WindowManager:
 
 	MyGrid:
 		id: mygrid
+		timer:"timer"
 		numplayers:numplayers
 		curplayer:curplayer
 		playername:playername
 		displaynumplayers:displaynumplayers
 		displayplayernames:displayplayernames
+		totalpointslabel:totalpointslabel
 
 		FloatLayout:
 			size: root.width, root.height
 			size_hint: .6,.3
+
+			GridLayout:
+				size_hint: .1, .25
+				cols: 1
+				pos_hint: {"x": .45, "y": .25}
+				Label:
+					id:totalpointslabel
+					valign: "bottom"
+
+
 
 			GridLayout:
 				size_hint: .65,.05
@@ -113,3 +127,14 @@ WindowManager:
 		name: 'myscoregrid'
 		id: myscoregrid
 		size_hint: 1, 1
+
+		GridLayout:
+			cols:1
+			size_hint:.15, .07
+			pos_hint:{"x":.85, "y":.7 }
+			Button:
+				text:"End Game"
+				on_press: myscoregrid.update_overall_points()
+				on_release:
+                    app.root.current = "screen1"
+                    root.manager.transition.direction = "right"					

@@ -11,17 +11,60 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.properties import ObjectProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.lang import Builder
+from kivy.animation import Animation
+from kivy.properties import StringProperty, NumericProperty
 from kivy.core.window import Window
+from kivy.uix.popup import Popup
+import math
 
 
-players=[]
+total_points = {}
+
+PIN_NUMBER = '1234'
+
+time_remaining = ""
+
+class IncrediblyCrudeClock(Label):
+    a = NumericProperty(60)  # seconds
+
+    def set_time(self, time):
+    	self.a = time
+
+    def start(self):
+        Animation.cancel_all(self)  # stop any current animations
+        self.anim = Animation(a=0, duration=self.a)
+        def finish_callback(animation, incr_crude_clock):
+            incr_crude_clock.text = "0"
+            popup = Popup(title='Test popup', content=Label(text='No more time left, please contact an associate to add more time', 
+            	halign = "center",text_size= (200, None), size_hint=(1,1)),
+              size_hint=(.4,.4))
+            popup.open()
+        self.anim.bind(on_complete=finish_callback)
+        self.anim.start(self)
+
+
+    def add_time(self, time):
+     	self.a += time
+
+
+    def pause(self):
+    	self.anim.cancel(self)
+
+    def on_a(self, instance, value):
+        hours = math.floor(value/3600)
+        minutes = math.floor((value%3600)/60)
+        seconds = math.floor((value%60))
+        self.text = "{:02d}".format(hours) + ":"+"{:02d}".format(minutes)+":"+"{:02d}".format(seconds)
 
 class MyScoreGrid(FloatLayout):
 	rounds = 10
 	players = []
-	cur_player = 0
+	player_points = []
+	cur_player = 1
 	cur_round = 1
 	all_labels=[]	
+	loaded = False
+	kivy_timer = IncrediblyCrudeClock()
 	def __init__(self, **kwargs):
 		super(MyScoreGrid, self).__init__(**kwargs)
 	
@@ -46,13 +89,34 @@ class MyScoreGrid(FloatLayout):
 
 
 
+
 	def set_players(self, playernames):
 
+		self.cur_player = 1
+		self.cur_round = 1
 		self.players = [i for i in playernames]
+		self.player_points = [0 for i in playernames]
+		self.all_labels = []
+
+		if self.loaded:
+			self.inside.clear_widgets()
+			self.remove_widget(self.inside)
+
+		row_of_labels = []
+		for i in range(self.rounds+2):
+			if i == self.rounds+1:
+				row_of_labels.append(Label(text="Total"))
+			else:
+				row_of_labels.append(Label(text=""))
+
+		self.all_labels.append(row_of_labels)
+
+
+
 
 		for player in self.players:
 			row_of_labels=[Label(text=player)]
-			for i in range(self.rounds):
+			for i in range(self.rounds+1):
 				row_of_labels.append(Label(text="0"))
 
 			self.all_labels.append(row_of_labels)
@@ -61,16 +125,35 @@ class MyScoreGrid(FloatLayout):
 		self.inside.size_hint=(1, .2)
 		self.inside.pos_hint={"x":0, "y":.8}
 
-		self.inside.cols = self.rounds+1
+		self.inside.cols = self.rounds+2
 
 		for row in self.all_labels:
 			for label in row:
 				self.inside.add_widget(label)
 
+
+
+
 		self.add_widget(self.inside)	
 		self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
 		self._keyboard.bind(on_key_down=self._on_keyboard_down)
+		self.loaded = True
 
+		self.inside.add_widget(self.kivy_timer)
+
+
+
+	def set_timer(self, time_left):
+		self.kivy_timer.set_time(time_left)
+
+	def pause_timer(self):
+		self.kivy_timer.pause()
+
+	def restart_timer(self):
+		if self.kivy_timer.a > 0:
+			self.kivy_timer.start()
+	def get_time_left(self):
+		return self.kivy_timer.a
 
 
 	def _keyboard_closed(self):
@@ -78,27 +161,31 @@ class MyScoreGrid(FloatLayout):
 		self._keyboard = None
 
 	def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
+		points_to_add = 0
 		if keycode[1] == '1':
-			self.all_labels[self.cur_player][self.cur_round].text='1'
+			points_to_add = 1
 		elif keycode[1] == '2':
-			self.all_labels[self.cur_player][self.cur_round].text='2'
+			points_to_add = 2
 		elif keycode[1] == '3':
-			self.all_labels[self.cur_player][self.cur_round].text='3'
+			points_to_add = 3
 		elif keycode[1] == '4':
-			self.all_labels[self.cur_player][self.cur_round].text='4'
+			points_to_add = 4
 		elif keycode[1] == '5':
-			self.all_labels[self.cur_player][self.cur_round].text='5'
+			points_to_add = 5
 
+		self.all_labels[self.cur_player][self.cur_round].text=str(points_to_add)
+		self.player_points[self.cur_player-1] += points_to_add
+		self.update_total_points()
 		self.update_label_index()
+		print(keycode[1])
 		return True
-
 
 
 	def update_label_index(self):
 		self.cur_player += 1
 
-		if self.cur_player == len(self.players):
-			self.cur_player = 0
+		if self.cur_player == len(self.players)+1:
+			self.cur_player = 1
 			self.cur_round += 1
 
 		if self.cur_round > self.rounds:
@@ -106,7 +193,23 @@ class MyScoreGrid(FloatLayout):
 
 	def update_points(self, instance):
 		self.all_labels[self.cur_player][self.cur_round].text=instance.text
+		self.player_points[self.cur_player-1] += int(instance.text)
+		self.update_total_points()
 		self.update_label_index()
+
+
+
+	def update_total_points(self):
+		self.all_labels[self.cur_player][self.rounds+1].text = str(self.player_points[self.cur_player-1])
+
+
+	def update_overall_points(self):
+		print(total_points)
+		for i in range(len(self.players)):
+			total_points[self.players[i]] += self.player_points[i]
+		# self._keyboard_closed()
+		
+
 
 
 class MyGrid(Widget):
@@ -118,6 +221,71 @@ class MyGrid(Widget):
 	playername = ObjectProperty(None)
 	displaynumplayers = ObjectProperty(None)
 	displayplayernames = ObjectProperty(None)
+	totalpointslabel = ObjectProperty(None)
+	kivy_timer = IncrediblyCrudeClock()
+
+	def __init__(self, **kwargs):
+		super(MyGrid, self).__init__(**kwargs)
+		self.kivy_timer.set_time(20)
+		self.kivy_timer.start()
+
+		self.add_widget(self.kivy_timer)
+
+		self._keyboard = Window.request_keyboard(self._keyboard_closed_main, self)
+		self._keyboard.bind(on_key_down=self._on_keyboard_down_main)
+
+	def _keyboard_closed_main(self):
+		self._keyboard.unbind(on_key_down=self._on_keyboard_down)
+		self._keyboard = None
+
+
+	def _keyboard_closed(self):
+		print("CLOSED")
+
+	def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
+		pass
+
+
+
+	def _on_keyboard_down_main(self, keyboard, keycode, text, modifiers):
+		print(keycode)
+		print(text)
+		print(modifiers)
+		if keycode[1] == 'm' and "ctrl" in modifiers:
+			popupGrid = GridLayout()
+			popupGrid.cols=2
+
+			pin_input = TextInput(multiline=False, size_hint=(.5,.4))
+			time_input = TextInput(multiline=False, size_hint=(.5,.4))
+
+			popupGrid.add_widget(Label(text="Enter PIN",size_hint=(.5,.4)))
+			popupGrid.add_widget(pin_input)
+			popupGrid.add_widget(Label(text="Minutes to add:", size_hint=(.5,.4)))
+			popupGrid.add_widget(time_input)
+			popupGrid.add_widget(Button(text="Add", size_hint=(.5,1), on_press=lambda *args: self.add_time(*args, pin_input.text, time_input.text)))
+			popup = Popup(title='Test popup', content=popupGrid, size_hint=(.4,.3))
+			popup.open()
+
+		return True
+
+	def add_time(self, instance, pin, time):
+		if pin == PIN_NUMBER:
+			self.kivy_timer.pause()
+			self.kivy_timer.add_time(float(time)*60)
+			self.kivy_timer.start()
+		
+
+	def set_timer(self, time_left):
+		self.kivy_timer.a=time_left
+
+	def pause_timer(self):
+		self.kivy_timer.pause()
+
+	def restart_timer(self):
+		if self.kivy_timer.a > 0:
+			self.kivy_timer.start()
+		self.numplayers.focus=True
+
 
 	def set_num_players(self):
 		self.player_names = []
@@ -125,6 +293,22 @@ class MyGrid(Widget):
 		self.curplayer.text = "Enter Name for Player " + str(self.curplayer_index)
 		self.displaynumplayers.text = "Number of Players: " + self.numplayers.text
 		self.displayplayernames.text = "Players: " 
+
+
+
+
+	def init_total_points(self):
+		text = "Total Points:\n\n"
+		for name in self.player_names:
+			text += name + ": 0\n"
+		self.totalpointslabel.text = text
+
+		self._keyboard = Window.request_keyboard(self._keyboard_closed_main, self)
+		self._keyboard.bind(on_key_down=self._on_keyboard_down_main)
+
+
+	def get_time_left(self):
+		return self.kivy_timer.a
 
 
 
@@ -139,27 +323,42 @@ class MyGrid(Widget):
 			self.player_names.append(self.playername.text)
 			self.curplayer_index += 1
 			self.curplayer.text = "All Players Added"
+			self.init_total_points()
 
 		else:
 			self.curplayer.text = "No More Players Can Be Added"
 
 		text = "\""+"\", \"".join(self.player_names)+"\""
+		total_points[self.playername.text] = 0
 
 
 		self.displayplayernames.text = "Players: " + text
 
 		self.playername.text = ""		
 
-		players.append(self.playername.text)
+		
+
 
 
 class MainWindow(Screen):
-	pass
+	def on_enter(self, *args):
+		if self.manager.ids:
+			text = "Total Points: \n\n"
+			for key in total_points:
+				text += key + ": " + str(total_points[key]) + "\n"
+			self.manager.ids.screen1.ids.totalpointslabel.text = text
+			self.manager.ids.screen1.ids.mygrid.set_timer(self.manager.ids.screen2.ids.myscoregrid.get_time_left())
+			self.manager.ids.screen1.ids.mygrid.restart_timer()
+			self.manager.ids.screen2.ids.myscoregrid.pause_timer()
+	
 
 class SecondWindow(Screen):
 	def on_enter(self, *args):
 		names = self.manager.ids.screen1.ids.displayplayernames.text.replace("Players: ", "").replace("\"", "").replace(",", "").split(" ")
 		self.manager.ids.screen2.ids.myscoregrid.set_players(names)
+		self.manager.ids.screen2.ids.myscoregrid.set_timer(self.manager.ids.screen1.ids.mygrid.get_time_left())
+		self.manager.ids.screen2.ids.myscoregrid.restart_timer()
+		self.manager.ids.screen1.ids.mygrid.pause_timer()
 
 class WindowManager(ScreenManager):
 	pass

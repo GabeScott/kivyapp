@@ -17,6 +17,10 @@ from kivy.core.window import Window
 from kivy.uix.popup import Popup
 from kivy.clock import Clock
 import math
+from kivy.uix.behaviors import ButtonBehavior
+from kivy.uix.image import Image
+
+
 
 
 total_points = {}
@@ -24,6 +28,11 @@ total_points = {}
 PIN_NUMBER = '1234'
 
 time_remaining = ""
+
+class ImageButton(ButtonBehavior, Image):
+	text=""
+	def update_text(self, text):
+		self.text = text
 
 class IncrediblyCrudeClock(Label):
     a = NumericProperty(60)  # seconds
@@ -77,20 +86,25 @@ class MyScoreGrid(FloatLayout):
 	
 
 
-		one_point_button = Button(text="1", size_hint=(.25,.25), pos_hint={"x":.1, "y":.35}, on_press=self.update_points)
+		one_point_button = ImageButton(source="zombie1.jpg", size_hint=(.25,.25), pos_hint={"x":.1, "y":.35}, on_press=self.update_points)
 		self.add_widget(one_point_button)
+		one_point_button.update_text('1')
 
-		two_point_button = Button(text="2", size_hint=(.22,.22), pos_hint={"x":.7, "y":.05}, on_press=self.update_points)
+		two_point_button = ImageButton(source="zombie2.jpg", size_hint=(.22,.22), pos_hint={"x":.7, "y":.05}, on_press=self.update_points)
 		self.add_widget(two_point_button)
+		two_point_button.update_text('2')
 
-		three_point_button = Button(text="3", size_hint=(.2,.2), pos_hint={"x":.15, "y":.05}, on_press=self.update_points)
+		three_point_button = ImageButton(source="zombie3.jpg", size_hint=(.2,.2), pos_hint={"x":.15, "y":.05}, on_press=self.update_points)
 		self.add_widget(three_point_button)
+		three_point_button.update_text('3')
 
-		four_point_button = Button(text="4", size_hint=(.18,.18), pos_hint={"x":.7, "y":.35}, on_press=self.update_points)
+		four_point_button = ImageButton(source="zombie4.jpg", size_hint=(.18,.18), pos_hint={"x":.7, "y":.35}, on_press=self.update_points)
 		self.add_widget(four_point_button)
+		four_point_button.update_text('4')
 
-		five_point_button = Button(text="5", size_hint=(.12,.12), pos_hint={"x":.45, "y":.25}, on_press=self.update_points)
+		five_point_button = ImageButton(source="zombie5.jpg", size_hint=(.12,.12), pos_hint={"x":.45, "y":.25}, on_press=self.update_points)
 		self.add_widget(five_point_button)
+		five_point_button.update_text('5')
 
 
 

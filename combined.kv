@@ -135,12 +135,18 @@ WindowManager:
 		size_hint: 1, 1
 
 		GridLayout:
-			cols:1
-			size_hint:.15, .07
-			pos_hint:{"x":.85, "y":.7 }
+			cols:2
+			size_hint:.3, .07
+			pos_hint:{"x":.70, "y":.7 }
 			Button:
+				text:"Miss"
+				on_press: myscoregrid.add_zero_points()	
+
+			Button:
+				size_hint:.5,1
 				text:"End Game"
 				on_press: myscoregrid.update_overall_points()
 				on_release:
                     app.root.current = "screen1"
-                    root.manager.transition.direction = "right"					
+                    root.manager.transition.direction = "right"
+            				

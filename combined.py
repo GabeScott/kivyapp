@@ -21,6 +21,28 @@ from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.image import Image
 
 
+
+
+
+total_points = {}
+
+PIN_NUMBER = '1234'
+
+time_remaining = ""
+
+game_type="target"
+
+
+def get_highscores():
+	high_scores = [{"Name":"Gabe","Points":50,"Date":"05/25/2020"},
+					{"Name":"Colton","Points":49,"Date":"05/25/2020"},
+					{"Name":"Jovany","Points":48,"Date":"05/25/2020"},
+					{"Name":"Obama","Points":47,"Date":"05/25/2020"},
+					{"Name":"Tavares","Points":46,"Date":"05/25/2020"}]
+
+	return high_scores
+
+
 def create_simple_popup(title, text):
 	layout = GridLayout()
 	layout.cols=1
@@ -31,16 +53,17 @@ def create_simple_popup(title, text):
 	layout.add_widget(Button(text="Close", on_press=popup.dismiss))
 	return popup
 
-total_points = {}
 
-PIN_NUMBER = '1234'
 
-time_remaining = ""
 
 
 class BackgroundColor(Widget):
 	pass
+	
 class BackgroundLabel(BackgroundColor,Label):
+	pass
+
+class CheckBoxLabel(ButtonBehavior, Label):
 	pass
 
 class ImageButton(ButtonBehavior, Image):
@@ -91,33 +114,64 @@ class MyScoreGrid(FloatLayout):
 	cur_player = 1
 	cur_round = 1
 	all_labels=[]	
-	loaded = False
 	kivy_timer = IncrediblyCrudeClock()
 	def __init__(self, **kwargs):
 		super(MyScoreGrid, self).__init__(**kwargs)
+	
 
-		one_point_button = ImageButton(source="zombie1.jpg", size_hint=(.25,.25), pos_hint={"x":.1, "y":.35}, on_press=self.update_points)
-		self.add_widget(one_point_button)
-		one_point_button.update_text('1')
+	def show_target(self, gameType):
+		print(gameType + " SHOW_TARGET")
 
-		two_point_button = ImageButton(source="zombie2.jpg", size_hint=(.22,.22), pos_hint={"x":.7, "y":.05}, on_press=self.update_points)
-		self.add_widget(two_point_button)
-		two_point_button.update_text('2')
+		self.game_float = FloatLayout()
+		self.game_float.size=self.size_hint
+		self.game_float.pos = self.pos
 
-		three_point_button = ImageButton(source="zombie3.jpg", size_hint=(.2,.2), pos_hint={"x":.15, "y":.05}, on_press=self.update_points)
-		self.add_widget(three_point_button)
-		three_point_button.update_text('3')
+		if gameType == 'zombie':
 
-		four_point_button = ImageButton(source="zombie4.jpg", size_hint=(.18,.18), pos_hint={"x":.7, "y":.35}, on_press=self.update_points)
-		self.add_widget(four_point_button)
-		four_point_button.update_text('4')
+			one_point_button = ImageButton(source="zombie1.jpg", size_hint=(.25,.25), pos_hint={"x":.1, "y":.35}, on_press=self.update_points)
+			self.game_float.add_widget(one_point_button)
+			one_point_button.update_text('1')
 
-		five_point_button = ImageButton(source="zombie5.jpg", size_hint=(.12,.12), pos_hint={"x":.45, "y":.25}, on_press=self.update_points)
-		self.add_widget(five_point_button)
-		five_point_button.update_text('5')
+			two_point_button = ImageButton(source="zombie2.jpg", size_hint=(.22,.22), pos_hint={"x":.7, "y":.05}, on_press=self.update_points)
+			self.game_float.add_widget(two_point_button)
+			two_point_button.update_text('2')
+
+			three_point_button = ImageButton(source="zombie3.jpg", size_hint=(.2,.2), pos_hint={"x":.15, "y":.05}, on_press=self.update_points)
+			self.game_float.add_widget(three_point_button)
+			three_point_button.update_text('3')
+
+			four_point_button = ImageButton(source="zombie4.jpg", size_hint=(.18,.18), pos_hint={"x":.7, "y":.35}, on_press=self.update_points)
+			self.game_float.add_widget(four_point_button)
+			four_point_button.update_text('4')
+
+			five_point_button = ImageButton(source="zombie5.jpg", size_hint=(.12,.12), pos_hint={"x":.45, "y":.25}, on_press=self.update_points)
+			self.game_float.add_widget(five_point_button)
+			five_point_button.update_text('5')
+
+		else:
+			target_button = ImageButton(source="target-updated.png", size_hint=(.6,.6), pos_hint={"x":.15, "y":.05}, on_press=self.update_points_target)
+			self.game_float.add_widget(target_button)
+
+		self.add_widget(self.game_float)
 
 
 
+	def update_points_target(self, instance):
+			popupGrid = GridLayout()
+			popupGrid.cols=3
+
+			popupGrid.add_widget(Button(text="1", size_hint=(.5,1), on_press=self.update_points))
+			popupGrid.add_widget(Button(text="2", size_hint=(.5,1), on_press=self.update_points))
+			popupGrid.add_widget(Button(text="3", size_hint=(.5,1), on_press=self.update_points))
+			popupGrid.add_widget(Button(text="4", size_hint=(.5,1), on_press=self.update_points))
+			popupGrid.add_widget(Button(text="5", size_hint=(.5,1), on_press=self.update_points))
+			popupGrid.add_widget(Button(text="6", size_hint=(.5,1), on_press=self.update_points))
+			popupGrid.add_widget(Button(text="0", size_hint=(.5,1), on_press=self.update_points))
+
+			popup = Popup(title='Add Points', content=popupGrid, size_hint=(.4,.3))
+			popupGrid.add_widget(Button(text="Close", size_hint=(.3,1), on_press=popup.dismiss))
+
+			popup.open()
 
 
 
@@ -128,10 +182,6 @@ class MyScoreGrid(FloatLayout):
 		self.players = [i for i in playernames]
 		self.player_points = [0 for i in playernames]
 		self.all_labels = []
-
-		if self.loaded:
-			self.inside.clear_widgets()
-			self.remove_widget(self.inside)
 
 		row_of_labels = []
 		for i in range(self.rounds+2):
@@ -216,7 +266,7 @@ class MyScoreGrid(FloatLayout):
 			if self.cur_round > self.rounds:
 				if isinstance(App.get_running_app().root_window.children[0], Popup):
 					App.get_running_app().root_window.children[0].dismiss()
-				popup = Popup(title='Game Over', content=Label(text="No More Rounds, Please Start New Game"), size_hint=(.4,.3))
+				popup = create_simple_popup('Game Over', "No More Rounds, Please Start New Game")
 				popup.open()
 			else:
 				self.all_labels[self.cur_player][self.cur_round].text=str(points_to_add)
@@ -231,7 +281,7 @@ class MyScoreGrid(FloatLayout):
 		if self.cur_round > self.rounds:
 			if isinstance(App.get_running_app().root_window.children[0], Popup):
 				App.get_running_app().root_window.children[0].dismiss()
-			popup = Popup(title='Game Over', content=Label(text="No More Rounds, Please Start New Game"), size_hint=(.4,.3))
+			popup = create_simple_popup('Game Over', "No More Rounds, Please Start New Game")
 			popup.open()
 		else:
 			self.update_label_index()
@@ -259,6 +309,8 @@ class MyScoreGrid(FloatLayout):
 			self.all_labels[self.cur_player][self.cur_round].color=(1,0,0,1)
 
 	def update_points(self, instance):
+		if isinstance(App.get_running_app().root_window.children[0], Popup):
+					App.get_running_app().root_window.children[0].dismiss()
 		if self.cur_round > self.rounds:
 			popup = create_simple_popup("Game Over", "No More Rounds, Please Start New Game")
 			popup.open()
@@ -268,6 +320,7 @@ class MyScoreGrid(FloatLayout):
 			self.update_total_points()
 			self.update_label_index()
 			self.highlight_row()
+		
 
 
 
@@ -276,6 +329,12 @@ class MyScoreGrid(FloatLayout):
 
 
 	def update_overall_points(self):
+		self.inside.clear_widgets()
+		self.game_float.clear_widgets()
+		self.remove_widget(self.inside)
+		self.remove_widget(self.game_float)
+
+
 		print(total_points)
 		for i in range(len(self.players)):
 			total_points[self.players[i]] += self.player_points[i]
@@ -294,6 +353,26 @@ class MyGrid(Widget):
 	totalpointslabel = ObjectProperty(None)
 	playbutton=ObjectProperty(None)
 
+	firstplacename=ObjectProperty(None)
+	firstplacepoints=ObjectProperty(None)
+	firstplacedate=ObjectProperty(None)
+	
+	secondplacename=ObjectProperty(None)
+	secondplacepoints=ObjectProperty(None)
+	secondplacedate=ObjectProperty(None)
+
+	thirdplacename=ObjectProperty(None)
+	thirdplacepoints=ObjectProperty(None)
+	thirdplacedate=ObjectProperty(None)
+
+	fourthplacename=ObjectProperty(None)
+	fourthplacepoints=ObjectProperty(None)
+	fourthplacedate=ObjectProperty(None)
+
+	fifthplacename=ObjectProperty(None)
+	fifthplacepoints=ObjectProperty(None)
+	fifthplacedate=ObjectProperty(None)
+
 	kivy_timer = IncrediblyCrudeClock()
 
 	def __init__(self, **kwargs):
@@ -306,6 +385,31 @@ class MyGrid(Widget):
 
 		self._keyboard = Window.request_keyboard(self._keyboard_closed_main, self)
 		self._keyboard.bind(on_key_down=self._on_keyboard_down_main)
+
+		Clock.schedule_once(self.after_created, 0)
+
+	def after_created(self, instance):
+		highscores = get_highscores()
+		self.firstplacename.text=highscores[0]["Name"]
+		self.firstplacepoints.text=str(highscores[0]["Points"])
+		self.firstplacedate.text=highscores[0]["Date"]
+		
+		self.secondplacename.text=highscores[1]["Name"]
+		self.secondplacepoints.text=str(highscores[1]["Points"])
+		self.secondplacedate.text=highscores[1]["Date"]
+
+		self.thirdplacename.text=highscores[2]["Name"]
+		self.thirdplacepoints.text=str(highscores[2]["Points"])
+		self.thirdplacedate.text=highscores[2]["Date"]
+
+		self.fourthplacename.text=highscores[3]["Name"]
+		self.fourthplacepoints.text=str(highscores[3]["Points"])
+		self.fourthplacedate.text=highscores[3]["Date"]
+
+		self.fifthplacename.text=highscores[4]["Name"]
+		self.fifthplacepoints.text=str(highscores[4]["Points"])
+		self.fifthplacedate.text=highscores[4]["Date"]
+
 
 	def _keyboard_closed_main(self):
 		self._keyboard.unbind(on_key_down=self._on_keyboard_down)
@@ -428,13 +532,13 @@ class MyGrid(Widget):
 			popup = create_simple_popup("Enter Number of Players","Please Enter a Valid Number of Players")
 			popup.open()
 
-		if self.playername.text in self.player_names:
+		elif self.playername.text in self.player_names:
 			if isinstance(App.get_running_app().root_window.children[0], Popup):
 				App.get_running_app().root_window.children[0].dismiss()
 			popup = create_simple_popup("Invalid Player Name","Player Already Added, Please Choose New Name")
 			popup.open()
 
-		if len(self.playername.text) == 0:
+		elif len(self.playername.text) == 0:
 			if isinstance(App.get_running_app().root_window.children[0], Popup):
 				App.get_running_app().root_window.children[0].dismiss()
 			popup = create_simple_popup("Invalid Player Name","Please Enter at Least One Character")
@@ -465,6 +569,8 @@ class MyGrid(Widget):
 		self.playername.focus=True
 
 	def ok_to_play(self):
+		if not self.numplayers.text.isdigit() or int(self.numplayers.text) <= 0:
+			return False
 		return len(self.player_names) == int(self.numplayers.text)
 
 		
@@ -491,8 +597,15 @@ class SecondWindow(Screen):
 		self.manager.ids.screen2.ids.myscoregrid.set_players(names)
 		self.manager.ids.screen2.ids.myscoregrid.set_timer(self.manager.ids.screen1.ids.mygrid.get_time_left())
 		self.manager.ids.screen2.ids.myscoregrid.restart_timer()
-		self.manager.ids.screen1.ids.mygrid.pause_timer()	
+		self.manager.ids.screen1.ids.mygrid.pause_timer()
 		self.manager.ids.screen2.ids.myscoregrid.highlight_row()
+		if self.manager.ids.screen1.ids.zombiegame.active:
+			game_type = 'zombie'
+		else:
+			game_type = 'target'
+		print(game_type + " ON_ENTER")
+		self.manager.ids.screen2.ids.myscoregrid.show_target(game_type)
+
 
 class WindowManager(ScreenManager):
 	def go_to_game_screen(self):

@@ -40,25 +40,127 @@ WindowManager:
 		displayplayernames:displayplayernames
 		totalpointslabel:totalpointslabel
 		playbutton:playbutton
+		mygridfloat:mygridfloat
+		targetgame:targetgame
+		zombiegame:zombiegame
+
+		firstplacename:firstplacename
+		firstplacepoints:firstplacepoints
+		firstplacedate:firstplacedate
+		
+		secondplacename:secondplacename
+		secondplacepoints:secondplacepoints
+		secondplacedate:secondplacedate
+
+		thirdplacename:thirdplacename
+		thirdplacepoints:thirdplacepoints
+		thirdplacedate:thirdplacedate
+
+		fourthplacename:fourthplacename
+		fourthplacepoints:fourthplacepoints
+		fourthplacedate:fourthplacedate
+
+		fifthplacename:fifthplacename
+		fifthplacepoints:fifthplacepoints
+		fifthplacedate:fifthplacedate
+
 
 		FloatLayout:
+			id:mygridfloat
 			size: root.width, root.height
 			size_hint: .6,.3
 
 			GridLayout:
-				size_hint: .1, .25
-				cols: 1
-				pos_hint: {"x": .45, "y": .25}
+				size_hint: .1,.1
+				cols:1
+				pos_hint:{"x": .8, "y":.45}
 				Label:
+					text:"Total Points:"
 					id:totalpointslabel
 					valign: "bottom"
+
+			GridLayout:
+				cols:1
+				size_hint:.25,.08
+				pos_hint:{"x":.375, "y":.92}
+				Label:
+					text:"All-Time High Scores"
+
+
+			GridLayout:
+				size_hint: .8, .3
+				pos_hint:{"x":.1, "y":.65}
+				cols:4
+				Label:
+					text:"Place"
+				Label:
+					text:"Name"
+				Label:
+					text:"Points"
+				Label:
+					text:"Date"
+				Label:
+					text:"1"
+				Label:
+					id:firstplacename
+					text:"Name"
+				Label:
+					id:firstplacepoints
+					text:"Points"
+				Label:
+					id:firstplacedate
+					text:"Date"
+				Label:
+					text:"2"
+				Label:
+					id:secondplacename
+					text:"Name"
+				Label:
+					id:secondplacepoints
+					text:"Points"
+				Label:
+					id:secondplacedate
+					text:"Date"
+				Label:
+					text:"3"
+				Label:
+					id:thirdplacename
+					text:"Name"
+				Label:
+					id:thirdplacepoints
+					text:"Points"
+				Label:
+					id:thirdplacedate
+					text:"Date"
+				Label:
+					text:"4"
+				Label:
+					id:fourthplacename
+					text:"Name"
+				Label:
+					id:fourthplacepoints
+					text:"Points"
+				Label:
+					id:fourthplacedate
+					text:"Date"
+				Label:
+					text:"5"
+				Label:
+					id:fifthplacename
+					text:"Name"
+				Label:
+					id:fifthplacepoints
+					text:"Points"
+				Label:
+					id:fifthplacedate
+					text:"Date"
 
 
 
 			GridLayout:
 				size_hint: .65,.05
 				cols:3
-				pos_hint: {"x":.175, "y":.6}
+				pos_hint: {"x":.01, "y":.35}
 				BackgroundLabel:
 					size_hint: .3, 1
 					text: "How Many Players?"
@@ -76,7 +178,7 @@ WindowManager:
 			GridLayout:
 				size_hint: .65,.05
 				cols:3
-				pos_hint: {"x":.175, "y":.53}
+				pos_hint: {"x":.01, "y":.28}
 				BackgroundLabel:
 					id: curplayer
 					text: "Player"
@@ -94,7 +196,28 @@ WindowManager:
 				Button:
 					size_hint: .1, 1
 					text: "Add"
-					on_press: mygrid.submit_player_name()		
+					on_press: mygrid.submit_player_name()	
+
+
+
+			GridLayout:
+				size_hint: .5,.1
+				cols:2
+				pos_hint:{"x": .01, "y":.45}
+				BackgroundLabel:
+					text_size: self.width, None
+					pos_hint: {"x":.01, "y":0}
+					text: "Number of Players: "
+					id: displaynumplayers
+					halign: "left"
+					size_hint: .5, None
+				BackgroundLabel:
+					pos_hint: {"x":0, "y":0}
+					text_size: self.width, None
+					text: "Players: "
+					id: displayplayernames
+					halign: "left"
+					size_hint: .5, None	
 
 			GridLayout:
 				size_hint: .2,.1
@@ -105,26 +228,27 @@ WindowManager:
 					text:"Play!"
 					on_press: mygrid.check_timer_status()
 					on_release:
-						app.root.go_to_game_screen()		
+						app.root.go_to_game_screen()
 
 			GridLayout:
-				size_hint: 1,1
-				cols:2
-				pos_hint:{"x": 0, "y":0}
-				BackgroundLabel:
-					text_size: self.width, None
-					pos_hint: {"x":1, "y":0}
-					text: "Number of Players: "
-					id: displaynumplayers
-					halign: "center"
-					size_hint: .5, None
-				BackgroundLabel:
-					pos_hint: {"x":0, "y":0}
-					text_size: self.width, None
-					text: "Players: "
-					id: displayplayernames
-					halign: "left"
-					size_hint: .5, None
+				size_hint: .2,.1
+				cols:4
+				pos_hint:{"x":.4,"y":.02}
+				CheckBox:
+					id:targetgame
+					group: 'gametype'
+				CheckBoxLabel:
+					on_press:targetgame._do_press()
+					text:"Target"
+				CheckBox:
+					id:zombiegame
+					group: 'gametype'
+					active:True
+				CheckBoxLabel:
+					text:"Zombie"
+					on_press:zombiegame._do_press()
+
+
 
 
 <SecondWindow>:

@@ -34,11 +34,11 @@ PIN_NUMBER = '1234'
 time_remaining = ""
 
 game_type="target"
-high_scores = [{"Name":"Gabe","Points":50,"Date":"05/25/2020"},
-				{"Name":"Colton","Points":49,"Date":"05/25/2020"},
-				{"Name":"Jovany","Points":48,"Date":"05/25/2020"},
-				{"Name":"Obama","Points":47,"Date":"05/25/2020"},
-				{"Name":"Tavares","Points":46,"Date":"05/25/2020"}]
+high_scores = [{"Name":"Gabe","Points":50,"Date":"2020-05-25"},
+				{"Name":"Colton","Points":49,"Date":"2020-05-25"},
+				{"Name":"Jovany","Points":48,"Date":"2020-05-25"},
+				{"Name":"Obama","Points":47,"Date":"2020-05-25"},
+				{"Name":"Tavares","Points":46,"Date":"2020-05-25"}]
 
 
 def get_highscores():
@@ -46,14 +46,15 @@ def get_highscores():
 
 
 def update_highscores(scores):
+	high_scores=get_highscores()
 	for new_score_name in scores:
 		new_score_points = scores[new_score_name]
 		for i in range(len(high_scores)):
-			cur_score_points = highscores[i]["Points"]
+			cur_score_points = high_scores[i]["Points"]
 			if int(new_score_points) > cur_score_points:
-				high_scores.insert(i, {"Name": new_score_name, "Points": int(new_score_points), "Date":date.today()})
+				high_scores.insert(i, {"Name": new_score_name, "Points": int(new_score_points), "Date":str(date.today())})
 				break
-
+	high_scores = high_scores[0:5]
 
 
 
@@ -161,9 +162,13 @@ class MyScoreGrid(FloatLayout):
 			self.game_float.add_widget(four_point_button)
 			four_point_button.update_text('4')
 
-			five_point_button = ImageButton(source="zombie5.jpg", size_hint=(.12,.12), pos_hint={"x":.45, "y":.25}, on_press=self.update_points)
+			five_point_button = ImageButton(source="zombie5.jpg", size_hint=(.12,.12), pos_hint={"x":.4, "y":.25}, on_press=self.update_points)
 			self.game_float.add_widget(five_point_button)
 			five_point_button.update_text('5')
+
+			six_point_button = ImageButton(source="zombie6.jpg", size_hint=(.1,.1), pos_hint={"x":.55, "y":.25}, on_press=self.update_points)
+			self.game_float.add_widget(six_point_button)
+			six_point_button.update_text('6')
 
 		else:
 			target_button = ImageButton(source="target-updated.png", size_hint=(.6,.6), pos_hint={"x":.15, "y":.05}, on_press=self.update_points_target)
@@ -277,6 +282,8 @@ class MyScoreGrid(FloatLayout):
 			points_to_add = 4
 		elif keycode[1] == '5':
 			points_to_add = 5
+		elif keycode[1] == '6':
+			points_to_add = 6
 		else:
 			intentional_keypress = False
 
@@ -354,11 +361,14 @@ class MyScoreGrid(FloatLayout):
 		self.remove_widget(self.inside)
 		self.remove_widget(self.game_float)
 
-
+		points_to_update = {}
 		for i in range(len(self.players)):
 			total_points[self.players[i]] += self.player_points[i]
+			points_to_update[self.players[i]] = self.player_points[i]
 
-		update_highscores(self.player_points)
+		
+
+		update_highscores(points_to_update)
 		# self._keyboard_closed()
 
 	def show_final_winner(self):
@@ -424,9 +434,9 @@ class MyGrid(Widget):
 		self._keyboard = Window.request_keyboard(self._keyboard_closed_main, self)
 		self._keyboard.bind(on_key_down=self._on_keyboard_down_main)
 
-		Clock.schedule_once(self.after_created, 0)
+		Clock.schedule_once(self.update_highscores, 0)
 
-	def after_created(self, instance):
+	def update_highscores(self, instance):
 		highscores = get_highscores()
 		self.firstplacename.text=highscores[0]["Name"]
 		self.firstplacepoints.text=str(highscores[0]["Points"])
@@ -611,6 +621,7 @@ class MyGrid(Widget):
 			return False
 		return len(self.player_names) == int(self.numplayers.text)
 
+
 		
 
 
@@ -618,12 +629,14 @@ class MyGrid(Widget):
 class MainWindow(Screen):
 	def on_enter(self, *args):
 		if self.manager.ids:
+
 			text = "Total Wins: \n\n"
 			for key in total_wins:
 				text += key + ": " + str(total_wins[key]) + " (" + str(total_points[key])+ " points)\n"
 			self.manager.ids.screen1.ids.totalpointslabel.text = text
 			self.manager.ids.screen1.ids.mygrid.set_timer(self.manager.ids.screen2.ids.myscoregrid.get_time_left())
 			self.manager.ids.screen1.ids.mygrid.restart_timer()
+			self.manager.ids.screen1.ids.mygrid.update_highscores(None)
 			self.manager.ids.screen2.ids.myscoregrid.pause_timer()
 			if self.manager.ids.screen1.ids.mygrid.kivy_timer.a == 0:
 				self.manager.ids.screen1.ids.mygrid.playbutton.disabled = True

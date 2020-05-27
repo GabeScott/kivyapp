@@ -1,6 +1,8 @@
 import kivy
 kivy.require('1.11.1')
 
+from datetime import date
+
 from kivy.app import App
 from kivy.uix.label import Label
 from kivy.uix.widget import Widget
@@ -25,22 +27,37 @@ from kivy.uix.image import Image
 
 
 total_points = {}
+total_wins = {}
 
 PIN_NUMBER = '1234'
 
 time_remaining = ""
 
 game_type="target"
+high_scores = [{"Name":"Gabe","Points":50,"Date":"05/25/2020"},
+				{"Name":"Colton","Points":49,"Date":"05/25/2020"},
+				{"Name":"Jovany","Points":48,"Date":"05/25/2020"},
+				{"Name":"Obama","Points":47,"Date":"05/25/2020"},
+				{"Name":"Tavares","Points":46,"Date":"05/25/2020"}]
 
 
 def get_highscores():
-	high_scores = [{"Name":"Gabe","Points":50,"Date":"05/25/2020"},
-					{"Name":"Colton","Points":49,"Date":"05/25/2020"},
-					{"Name":"Jovany","Points":48,"Date":"05/25/2020"},
-					{"Name":"Obama","Points":47,"Date":"05/25/2020"},
-					{"Name":"Tavares","Points":46,"Date":"05/25/2020"}]
-
 	return high_scores
+
+
+def update_highscores(scores):
+	for new_score_name in scores:
+		new_score_points = scores[new_score_name]
+		for i in range(len(high_scores)):
+			cur_score_points = highscores[i]["Points"]
+			if int(new_score_points) > cur_score_points:
+				high_scores.insert(i, {"Name": new_score_name, "Points": int(new_score_points), "Date":date.today()})
+				break
+
+
+
+
+
 
 
 def create_simple_popup(title, text):
@@ -113,6 +130,7 @@ class MyScoreGrid(FloatLayout):
 	player_points = []
 	cur_player = 1
 	cur_round = 1
+	show_winner=False
 	all_labels=[]	
 	kivy_timer = IncrediblyCrudeClock()
 	def __init__(self, **kwargs):
@@ -120,7 +138,6 @@ class MyScoreGrid(FloatLayout):
 	
 
 	def show_target(self, gameType):
-		print(gameType + " SHOW_TARGET")
 
 		self.game_float = FloatLayout()
 		self.game_float.size=self.size_hint
@@ -153,6 +170,7 @@ class MyScoreGrid(FloatLayout):
 			self.game_float.add_widget(target_button)
 
 		self.add_widget(self.game_float)
+		self.show_winner = False
 
 
 
@@ -274,7 +292,6 @@ class MyScoreGrid(FloatLayout):
 				self.update_total_points()
 				self.update_label_index()
 				self.highlight_row()
-			print(keycode[1])
 		return True
 
 	def add_zero_points(self):
@@ -304,6 +321,9 @@ class MyScoreGrid(FloatLayout):
 		if self.cur_player == len(self.players)+1:
 			self.cur_player = 1
 			self.cur_round += 1
+
+		if self.cur_round == self.rounds+1 and not self.show_winner:
+			self.show_final_winner()
 		
 		if self.cur_round <= self.rounds:
 			self.all_labels[self.cur_player][self.cur_round].color=(1,0,0,1)
@@ -335,11 +355,29 @@ class MyScoreGrid(FloatLayout):
 		self.remove_widget(self.game_float)
 
 
-		print(total_points)
 		for i in range(len(self.players)):
 			total_points[self.players[i]] += self.player_points[i]
+
+		update_highscores(self.player_points)
 		# self._keyboard_closed()
-		
+
+	def show_final_winner(self):
+		winner=[]
+		top_score = -1
+		for i in range(len(self.players)):
+			if top_score < self.player_points[i]:
+				top_score = self.player_points[i]
+				winner.clear()
+				winner.append(self.players[i])
+			elif top_score == self.player_points[i]:
+				winner.append(self.players[i])
+
+		for name in winner:
+			total_wins[name] += 1
+
+		popup = create_simple_popup("Winner!", "Congratulations to "+", ".join(winner) + ", won with " + str(top_score)+" points")		
+		popup.open()
+		self.show_winner = True
 
 class MyGrid(Widget):
 	player_names = []
@@ -417,7 +455,7 @@ class MyGrid(Widget):
 
 
 	def _keyboard_closed(self):
-		print("CLOSED")
+		pass
 
 	def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
 		pass
@@ -429,10 +467,6 @@ class MyGrid(Widget):
 
 
 	def _on_keyboard_down_main(self, keyboard, keycode, text, modifiers):
-		print(keycode)
-		print(text)
-		print(modifiers)
-
 		if keycode[1] == 'enter':
 			Clock.schedule_once(self.focus_playername, .2)
 
@@ -501,9 +535,7 @@ class MyGrid(Widget):
 			self.curplayer.text = "Enter Name for Player " + str(self.curplayer_index)
 			self.displaynumplayers.text = "Number of Players: " + self.numplayers.text
 			self.displayplayernames.text = "Players: " 
-
-
-
+			Clock.schedule_once(self.focus_playername, .2)
 
 	def init_total_points(self):
 		text = "Total Points:\n\n"
@@ -547,14 +579,16 @@ class MyGrid(Widget):
 		elif self.curplayer_index < int(self.numplayers.text):
 			self.curplayer_index += 1
 			self.curplayer.text = "Enter Name for Player " + str(self.curplayer_index)
-			self.player_names.append(self.playername.text)
-			total_points[self.playername.text] = 0
+			self.player_names.append(self.playername.text.strip())
+			total_points[self.playername.text.strip()] = 0
+			total_wins[self.playername.text.strip()] = 0
 			text = "\""+"\", \"".join(self.player_names)+"\""
 			self.displayplayernames.text = "Players: " + text
 
 		elif self.curplayer_index == int(self.numplayers.text):
-			self.player_names.append(self.playername.text)
-			total_points[self.playername.text] = 0
+			self.player_names.append(self.playername.text.strip())
+			total_points[self.playername.text.strip()] = 0
+			total_wins[self.playername.text.strip()] = 0
 			self.curplayer_index += 1
 			self.curplayer.text = "All Players Added"
 			self.init_total_points()
@@ -566,6 +600,10 @@ class MyGrid(Widget):
 
 		self.playername.text = ""		
 
+		Clock.schedule_once(self.focus_playername, .1)
+
+
+	def focus_playername(self, instance):
 		self.playername.focus=True
 
 	def ok_to_play(self):
@@ -580,9 +618,9 @@ class MyGrid(Widget):
 class MainWindow(Screen):
 	def on_enter(self, *args):
 		if self.manager.ids:
-			text = "Total Points: \n\n"
-			for key in total_points:
-				text += key + ": " + str(total_points[key]) + "\n"
+			text = "Total Wins: \n\n"
+			for key in total_wins:
+				text += key + ": " + str(total_wins[key]) + " (" + str(total_points[key])+ " points)\n"
 			self.manager.ids.screen1.ids.totalpointslabel.text = text
 			self.manager.ids.screen1.ids.mygrid.set_timer(self.manager.ids.screen2.ids.myscoregrid.get_time_left())
 			self.manager.ids.screen1.ids.mygrid.restart_timer()
@@ -593,7 +631,7 @@ class MainWindow(Screen):
 
 class SecondWindow(Screen):
 	def on_enter(self, *args):
-		names = self.manager.ids.screen1.ids.displayplayernames.text.replace("Players: ", "").replace("\"", "").replace(",", "").split(" ")
+		names = self.manager.ids.screen1.ids.displayplayernames.text.replace("Players: ", "").replace("\", ", "|").replace("\"", "").replace(",", "").split("|")
 		self.manager.ids.screen2.ids.myscoregrid.set_players(names)
 		self.manager.ids.screen2.ids.myscoregrid.set_timer(self.manager.ids.screen1.ids.mygrid.get_time_left())
 		self.manager.ids.screen2.ids.myscoregrid.restart_timer()
@@ -603,7 +641,6 @@ class SecondWindow(Screen):
 			game_type = 'zombie'
 		else:
 			game_type = 'target'
-		print(game_type + " ON_ENTER")
 		self.manager.ids.screen2.ids.myscoregrid.show_target(game_type)
 
 

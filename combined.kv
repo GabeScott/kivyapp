@@ -238,16 +238,18 @@ WindowManager:
 				CheckBox:
 					id:targetgame
 					group: 'gametype'
+					on_press: if self.active == False: self.active = True
 				CheckBoxLabel:
-					on_press:targetgame._do_press()
+					on_press: if zombiegame.active == True: targetgame._do_press()
 					text:"Target"
 				CheckBox:
 					id:zombiegame
 					group: 'gametype'
 					active:True
+					on_press: if self.active == False: self.active = True
 				CheckBoxLabel:
 					text:"Zombie"
-					on_press:zombiegame._do_press()
+					on_press: if targetgame.active == True: zombiegame._do_press()
 
 
 
@@ -265,13 +267,10 @@ WindowManager:
 			pos_hint:{"x":.70, "y":.7 }
 			Button:
 				text:"Miss"
-				on_press: myscoregrid.add_zero_points()	
+				on_press: myscoregrid.update_scoreboard(0)	
 
 			Button:
 				size_hint:.5,1
 				text:"End Game"
 				on_press: myscoregrid.update_overall_points()
-				on_release:
-                    app.root.current = "screen1"
-                    root.manager.transition.direction = "right"
-            				
+				on_release: app.root.end_current_game()

@@ -30,6 +30,7 @@ total_points = {}
 total_wins = {}
 
 PIN_NUMBER = '1234'
+PERFECT_SCORE = 60
 
 time_remaining = ""
 high_scores = [{"Name":"Gabe","Points":50,"Date":"2020-05-25"},
@@ -128,11 +129,11 @@ class IncrediblyCrudeClock(Label):
 
 class MyScoreGrid(FloatLayout):
 	rounds = 10
-	players = []
-	player_points = []
+	players = {}
 	cur_player = 1
 	cur_round = 1
 	all_labels=[]	
+	current_score = 0
 	kivy_timer = IncrediblyCrudeClock()
 	def __init__(self, **kwargs):
 		super(MyScoreGrid, self).__init__(**kwargs)
@@ -247,14 +248,13 @@ class MyScoreGrid(FloatLayout):
 	def set_players(self, playernames):
 		self.reset_players()
 
-		self.players = [i for i in playernames]
-		self.player_points = [0 for i in playernames]
+		for name in playernames:
+			self.players[name]=0
 
+		print(self.players)
 		self.add_top_row()
 		self.add_player_rows()
 		self.add_timer()
-
-
 
 
 	def set_timer(self, time_left):
@@ -266,6 +266,7 @@ class MyScoreGrid(FloatLayout):
 	def restart_timer(self):
 		if self.kivy_timer.a > 0:
 			self.kivy_timer.start()
+
 	def get_time_left(self):
 		return self.kivy_timer.a
 
@@ -305,6 +306,10 @@ class MyScoreGrid(FloatLayout):
 	def unhighlight_previous_score_label(self):
 		self.all_labels[self.cur_player][self.cur_round].color=(1,1,1,1)
 
+	def unhighlight_all_score_labels(self):
+		for i in range(len(self.all_labels)):
+			self.all_labels[i][self.cur_round].color = (1,1,1,1)
+
 	def highlight_next_score_label(self):
 		if self.cur_round <= self.rounds:
 			self.all_labels[self.cur_player][self.cur_round].color=(1,0,0,1)
@@ -314,14 +319,74 @@ class MyScoreGrid(FloatLayout):
 		if self.cur_player == len(self.players)+1:
 			self.cur_player = 1
 			self.cur_round += 1
+
+		if self.cur_round > self.rounds:
+			self.check_for_perfect_games()
+
+	def check_for_perfect_games(self):#NEED TO CLEAN THIS METHOD
+		self.cur_round = self.rounds
+		perfect_games = self.get_players_with_perfect_games()
+		if len(perfect_games) > 0:
+			
+					
+			if self.current_score < 6:
+				self.set_player_index_by_name(perfect_games[0])	
+				perfect_games.remove(perfect_games[0])
+				self.all_labels[self.cur_player][self.cur_round].text=str(self.current_score)
+				if(len(perfect_games) > 0):
+					self.set_player_index_by_name(perfect_games[0])	
+					create_simple_popup("Perfect Game!", ", ".join(perfect_games) + " can keep playing until they miss a bullseye!").open()	
+					self.unhighlight_all_score_labels()
+					self.highlight_next_score_label()
+				else:
+					create_simple_popup("Game Over", "No More Rounds, Please Start New Game").open()
+					self.unhighlight_all_score_labels()
+
+			else:
+				create_simple_popup("Perfect Game!", ", ".join(perfect_games) + " can keep playing until they miss a bullseye!").open()	
+				self.update_point_totals()
+				self.unhighlight_all_score_labels()
+				self.set_player_index_by_name(perfect_games[0])	
+				self.highlight_next_score_label()
+				self.all_labels[self.cur_player][self.cur_round].text=str(self.current_score)		
+		
+		self.cur_round = self.rounds + 1
+
+
+	def get_last_score(self, player):
+		for i in range(len(self.all_labels)):
+			if self.all_labels[i][0].text == player:
+				return int(self.all_labels[i][self.rounds].text)
+
+	def player_has_perfect_score(self, player):
+		return self.players[player] >= PERFECT_SCORE and self.get_last_score(player) == 6
 		
 
+	def get_players_with_perfect_games(self):
+		perfect_games = []
+		for name in self.players:
+			if self.player_has_perfect_score(name):
+				perfect_games.append(name)
+
+		return perfect_games
+
+	def get_current_player_name(self):
+		return self.all_labels[self.cur_player][0].text
+
+	def set_player_index_by_name(self, name):
+		for i in range(len(self.all_labels)):
+			if self.all_labels[i][0].text == name:
+				self.cur_player = i 
+				break
+
+
 	def update_scoreboard(self, score):
-		if self.cur_round > self.rounds:
+		self.current_score = score
+		if self.cur_round > self.rounds and len(self.get_players_with_perfect_games()) == 0:
 			create_simple_popup("Game Over", "No More Rounds, Please Start New Game").open()
 		else:
 			self.all_labels[self.cur_player][self.cur_round].text=str(score)
-			self.player_points[self.cur_player-1] += score
+			self.players[self.get_current_player_name()] += score
 			self.update_point_totals()
 			self.unhighlight_previous_score_label()
 			self.update_label_index()
@@ -337,7 +402,7 @@ class MyScoreGrid(FloatLayout):
 		
 
 	def update_point_totals(self):
-		self.all_labels[self.cur_player][self.rounds+1].text = str(self.player_points[self.cur_player-1])
+		self.all_labels[self.cur_player][self.rounds+1].text = str(self.players[self.get_current_player_name()])
 
 
 	def update_overall_points(self):
@@ -347,9 +412,9 @@ class MyScoreGrid(FloatLayout):
 		self.remove_widget(self.game_float)
 
 		points_to_update = {}
-		for i in range(len(self.players)):
-			total_points[self.players[i]] += self.player_points[i]
-			points_to_update[self.players[i]] = self.player_points[i]
+		for player in self.players:
+			total_points[player] += self.players[player]
+			points_to_update[player] = self.players[player]
 
 		update_overall_highscores(points_to_update)
 
@@ -358,13 +423,13 @@ class MyScoreGrid(FloatLayout):
 	def calculate_final_winner(self):
 		winner=[]
 		top_score = -1
-		for i in range(len(self.players)):
-			if top_score < self.player_points[i]:
-				top_score = self.player_points[i]
+		for player in self.players:
+			if top_score < self.players[player]:
+				top_score = self.players[player]
 				winner.clear()
-				winner.append(self.players[i])
-			elif top_score == self.player_points[i]:
-				winner.append(self.players[i])
+				winner.append(player)
+			elif top_score == self.players[player]:
+				winner.append(player)
 
 		return winner, top_score
 
@@ -572,6 +637,7 @@ class MyGrid(Widget):
 
 
 	def get_player_names(self):
+		print(self.player_names)
 		return self.player_names
 
 
